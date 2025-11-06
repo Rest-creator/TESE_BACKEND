@@ -1,0 +1,541 @@
+openapi: 3.1.0
+info:
+  title: Messaging Service API
+  version: 1.0.0
+  description: API for handling real-time user-to-user conversations and messages.
+servers:
+  - url: /api/messaging
+    description: Local development server
+security:
+  - tokenAuth: []
+paths:
+  /conversations/:
+    get:
+      summary: List User's Conversations
+      operationId: listConversations
+      tags:
+        - Conversations
+      responses:
+        '200':
+          description: A list of conversations.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+        '500':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Create New Conversation
+      operationId: createConversation
+      tags:
+        - Conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreate'
+      responses:
+        '201':
+          description: Conversation created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Conversation created successfully
+                  conversation:
+                    $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/Error'
+  /conversations/{conversation_id}/:
+    get:
+      summary: Get Conversation Details & Messages
+      operationId: getConversationDetails
+      tags:
+        - Conversations
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            description: Page number for message pagination
+      responses:
+        '200':
+          description: Paginated list of messages and conversation details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  success:
+                    type: boolean
+                    example: true
+                  conversation:
+                    $ref: '#/components/schemas/Conversation'
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Error'
+  /conversations/{conversation_id}/messages/:
+    get:
+      summary: Get All Messages (Non-Paginated)
+      operationId: getConversationMessages
+      tags:
+        - Messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of all messages in the conversation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MessageSimple'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Send a Message
+      operationId: sendMessage
+      tags:
+        - Messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreate'
+      responses:
+        '201':
+          description: Message sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /conversations/{conversation_id}/read/:
+    post:
+      summary: Mark Messages as Read
+      operationId: markMessagesRead
+      tags:
+        - Messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Messages marked as read.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Marked 3 messages as read
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /messages/{message_id}/:
+    put:
+      summary: Edit a Message
+      operationId: editMessage
+      tags:
+        - Messages
+      parameters:
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: This is the updated message text.
+      responses:
+        '200':
+          description: Message updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a Message
+      operationId: deleteMessage
+      tags:
+        - Messages
+      parameters:
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Message deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /messages/{message_id}/react/:
+    post:
+      summary: React to a Message
+      operationId: reactToMessage
+      tags:
+        - Messages
+      parameters:
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reaction_type:
+                  type: string
+                  example: "👍"
+      responses:
+        '200':
+          description: Reaction added, updated, or removed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Reaction added
+                  reacted:
+                    type: boolean
+                  reaction_type:
+                    type: string
+                    example: "👍"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /notifications/:
+    get:
+      summary: Get Message Notifications
+      operationId: getNotifications
+      tags:
+        - Notifications
+      parameters:
+        - name: mark_read
+          in: query
+          schema:
+            type: boolean
+            description: Set to true to mark all notifications as read
+      responses:
+        '200':
+          description: A list of notifications.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+  /start-conversation/:
+    post:
+      summary: Start Conversation (Shortcut)
+      operationId: startConversation
+      tags:
+        - Conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartConversation'
+      responses:
+        '201':
+          description: Conversation started successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Conversation started successfully
+                  conversation:
+                    $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    UserSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        full_name:
+          type: string
+    MessageSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        sender_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        sender:
+          $ref: '#/components/schemas/UserSimple'
+        content:
+          type: string
+        message_type:
+          type: string
+          example: text
+        created_at:
+          type: string
+          format: date-time
+        is_edited:
+          type: boolean
+        reactions:
+          type: array
+          items:
+            type: object # Define MessageReaction schema if needed
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          nullable: true
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSimple'
+        last_message:
+          $ref: '#/components/schemas/MessageSimple'
+        unread_count:
+          type: integer
+    ConversationCreate:
+      type: object
+      properties:
+        participants: # Assuming this is how it's handled
+          type: array
+          items:
+            type: integer
+          description: List of participant user IDs
+        initial_message:
+          type: string
+          description: Optional initial message content
+    MessageCreate:
+      type: object
+      properties:
+        content:
+          type: string
+        message_type:
+          type: string
+          default: text
+    StartConversation:
+      type: object
+      properties:
+        receiver_id:
+          type: integer
+        message:
+          type: string
+        product_id:
+          type: integer
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        sender:
+          $ref: '#/components/schemas/UserSimple'
+        message:
+          type: object
+          properties:
+            id:
+              type: integer
+            content:
+              type: string
+            message_type:
+              type: string
+        conversation:
+          type: object
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: An internal server error occurred.
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Conversation creation failed
+        errors:
+          type: object
+          example: { "field_name": ["This field is required."] }
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Resource not found
+    Error:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication (e.g., "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b")

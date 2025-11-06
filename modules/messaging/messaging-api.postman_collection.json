@@ -1,0 +1,366 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4",
+		"name": "Messaging Service API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Conversations",
+			"item": [
+				{
+					"name": "List Conversations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Conversation (Shortcut)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"receiver_id\": 2,\n    \"message\": \"Hi, is this product still available?\",\n    \"product_id\": 123\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/start-conversation/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"start-conversation",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conversation Details & Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/1/?page=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								"1",
+								""
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Conversation (Manual)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"participants\": [2, 3],\n    \"initial_message\": \"Hello team!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Messages",
+			"item": [
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"This is a new message!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/1/messages/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								"1",
+								"messages",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Messages (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/1/messages/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								"1",
+								"messages",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Message",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"This is the edited message content.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/messages/101/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"messages",
+								"101",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Message",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/messages/101/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"messages",
+								"101",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Messages as Read",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/conversations/1/read/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"conversations",
+								"1",
+								"read",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "React to Message",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reaction_type\": \"👍\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/messages/101/react/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"messages",
+								"101",
+								"react",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/messaging/notifications/?mark_read=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"messaging",
+								"notifications",
+								""
+							],
+							"query": [
+								{
+									"key": "mark_read",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apiKey",
+		"apiKey": [
+			{
+				"key": "value",
+				"value": "Token {{authToken}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "Authorization",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "authToken",
+			"value": "YOUR_API_TOKEN_HERE"
+		}
+	]
+}
