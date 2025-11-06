@@ -209,3 +209,6 @@ PAYNOW_RETURN_URL = os.environ.get("PAYNOW_RETURN_URL", "https://yourdomain.com/
 PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/paynow/result/")
 
 
+# settings.py
+# replace `myproject` with the name of the folder that contains wsgi.py
+WSGI_APPLICATION = "teseapp.wsgi.application"
