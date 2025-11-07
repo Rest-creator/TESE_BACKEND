@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ----------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-default-key")
 DEBUG = True  # Set to False in production
-ALLOWED_HOSTS = ["swapback.zchpc.ac.zw", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["swapback.zchpc.ac.zw", "localhost", "127.0.0.1", "tesebackend-4ic7p.sevalla.app"]
 
 # ----------------------
 # APPLICATION DEFINITION
@@ -85,26 +85,24 @@ TEMPLATES = [
 # ----------------------
 # DATABASE
 # ----------------------
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'tese_db',
-#         'USER': 'tese_db_user',
-#         'PASSWORD': 'KMzc65MLH6gNySiGE7WyiqIrnCXAZvyh0',
-#         'HOST': 'dpg-d3scvn49c44c73cm7vd0-a.oregon-postgres.render.com', # External host
-#         'PORT': '5432',
-#         'OPTIONS': {
-#             'sslmode': 'require'
-#         }
-#     }
-# }
-
+# ----------------------
+# DATABASE
+# ----------------------
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tese',
+        'USER': 'tese',
+        'PASSWORD': 'bvldcmefwomk',
+        'HOST': 'continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require'
+        }
     }
 }
+
+
 # ----------------------
 # AUTH USER
 # ----------------------
