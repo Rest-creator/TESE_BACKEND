@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "tesebackend-4ic7p.sevalla.app",
+    "tese-backend-wq0d.onrender.com"
 ]
 
 # ----------------------
