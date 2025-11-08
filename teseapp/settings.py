@@ -1,11 +1,11 @@
 # teseapp/settings.py
-
 from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
-load_dotenv()
 
+# Load local .env if present (harmless on Render, but not required)
+load_dotenv()
 
 # ----------------------
 # BASE DIRECTORY
@@ -16,8 +16,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ----------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-default-key")
-DEBUG = True  # Set to False in production
-ALLOWED_HOSTS = ["swapback.zchpc.ac.zw", "localhost", "127.0.0.1", "tesebackend-4ic7p.sevalla.app"]
+
+# Allow overriding DEBUG via env var: set DJANGO_DEBUG to 'True' or 'False'
+DEBUG = str(os.environ.get("DJANGO_DEBUG", "True")).lower() in ("1", "true", "yes")
+
+ALLOWED_HOSTS = [
+    "swapback.zchpc.ac.zw",
+    "localhost",
+    "127.0.0.1",
+    "tesebackend-4ic7p.sevalla.app",
+]
 
 # ----------------------
 # APPLICATION DEFINITION
@@ -29,13 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # Your apps
     "teseapi",
     "modules.messaging",  # Messaging module
     "pgvector",
     "search",
-
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",
@@ -59,10 +65,11 @@ MIDDLEWARE = [
 ]
 
 # ----------------------
-# URLS
+# URLS / ASGI / WSGI
 # ----------------------
 ROOT_URLCONF = "teseapp.urls"
 ASGI_APPLICATION = "teseapp.asgi.application"  # Channels support
+WSGI_APPLICATION = "teseapp.wsgi.application"  # For gunicorn
 
 # ----------------------
 # TEMPLATES
@@ -82,18 +89,23 @@ TEMPLATES = [
     },
 ]
 
-
+# ----------------------
+# DATABASES
+# ----------------------
+# Uses separate DB env vars. If you instead supply DATABASE_URL, you can switch to dj_database_url.parse(...)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='tese'),
-        'USER': env('DB_USER', default='tese'),
-        'PASSWORD': env('DB_PASSWORD', default='bvldcmefwomk'),
-        'HOST': env('DB_HOST', default='continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local'),
-        'PORT': env('DB_PORT', default='5432'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "tese"),
+        "USER": os.environ.get("DB_USER", "tese"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "bvldcmefwomk"),
+        "HOST": os.environ.get(
+            "DB_HOST",
+            "continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local",
+        ),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
-
 
 # ----------------------
 # AUTH USER
@@ -140,12 +152,8 @@ CORS_ALLOW_CREDENTIALS = False  # Not needed; JWT is stateless
 # REST FRAMEWORK (JWT only)
 # ----------------------
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
 # ----------------------
@@ -168,37 +176,33 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [(os.environ.get("REDIS_HOST", "127.0.0.1"), int(os.environ.get("REDIS_PORT", 6379)))],
         },
-    },
+    }
 }
 
 # ----------------------
 # HTTPS / Proxy Headers (if using reverse proxy)
 # ----------------------
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-
-
+# ----------------------
 # Bytescale Configuration
-BYTESCALE_API_KEY = os.environ.get('BYTESCALE_API_KEY', 'public_223k2Hc8KviJh2jj3gX3aSrz95ZX')
-BYTESCALE_ACCOUNT_ID = os.environ.get('BYTESCALE_ACCOUNT_ID', '223k2Hc')
+# ----------------------
+BYTESCALE_API_KEY = os.environ.get("BYTESCALE_API_KEY", "public_223k2Hc8KviJh2jj3gX3aSrz95ZX")
+BYTESCALE_ACCOUNT_ID = os.environ.get("BYTESCALE_ACCOUNT_ID", "223k2Hc")
 
-
-import os
-
+# ----------------------
+# Payment / External Keys
+# ----------------------
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 PAYNOW_SECRET_KEY = os.environ.get("PAYNOW_SECRET_KEY")
-
 PAYNOW_INTEGRATION_ID = os.environ.get("PAYNOW_INTEGRATION_ID")
-PAYNOW_SECRET_KEY = os.environ.get("PAYNOW_SECRET_KEY")
-
 
 # Optional URLs Paynow will redirect to after payment
 PAYNOW_RETURN_URL = os.environ.get("PAYNOW_RETURN_URL", "https://yourdomain.com/paynow/return/")
 PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/paynow/result/")
 
-
-# settings.py
-# replace `myproject` with the name of the folder that contains wsgi.py
-WSGI_APPLICATION = "teseapp.wsgi.application"
+# ----------------------
+# Any additional settings below...
+# ----------------------
