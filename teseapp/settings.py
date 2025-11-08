@@ -82,23 +82,15 @@ TEMPLATES = [
     },
 ]
 
-# ----------------------
-# DATABASE
-# ----------------------
-# ----------------------
-# DATABASE
-# ----------------------
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'tese',
-        'USER': 'tese',
-        'PASSWORD': 'dzouEiuL7z3ED0eMnSfqClrDMW4MS1lO',
-        'HOST': 'dpg-d47eroemcj7s73dbb780-a.oregon-postgres.render.com',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require'
-        }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME', default='tese'),
+        'USER': env('DB_USER', default='tese'),
+        'PASSWORD': env('DB_PASSWORD', default='bvldcmefwomk'),
+        'HOST': env('DB_HOST', default='continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local'),
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
 
