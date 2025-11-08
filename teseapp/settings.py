@@ -146,6 +146,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://swapback.zchpc.ac.zw",
     "http://localhost:8080",
     "http://localhost:8081",
+    "https://tese-frontend.onrender.com"
 ]
 CORS_ALLOW_CREDENTIALS = False  # Not needed; JWT is stateless
 
