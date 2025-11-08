@@ -90,11 +90,11 @@ TEMPLATES = [
 # ----------------------
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'tese',
         'USER': 'tese',
-        'PASSWORD': 'bvldcmefwomk',
-        'HOST': 'continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local',
+        'PASSWORD': 'dzouEiuL7z3ED0eMnSfqClrDMW4MS1lO',
+        'HOST': 'dpg-d47eroemcj7s73dbb780-a.oregon-postgres.render.com',
         'PORT': '5432',
         'OPTIONS': {
             'sslmode': 'require'
