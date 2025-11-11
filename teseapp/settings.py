@@ -56,16 +56,16 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # ----------------------
 MIDDLEWARE = [
-   
+    "corsheaders.middleware.CorsMiddleware",   # MUST BE FIRST
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 # ----------------------
 # URLS / ASGI / WSGI
@@ -155,13 +155,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ----------------------
 # CORS (allow your frontend domains)
 # ----------------------
-CORS_ALLOWED_ORIGINS = [
-    "https://tese-dvx.pages.dev",
-    "https://swapback.zchpc.ac.zw",
-    "http://localhost:8080",
-    "http://localhost:8081",
-    "https://tese-frontend.onrender.com"
-]
+
 CORS_ALLOW_CREDENTIALS = False  # Not needed; JWT is stateless
 
 # ----------------------
