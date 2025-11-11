@@ -56,10 +56,11 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # ----------------------
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
+   
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -221,3 +222,10 @@ PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/
 # ----------------------
 # Any additional settings below...
 # ----------------------
+# settings.py
+
+CORS_ALLOWED_ORIGINS = [
+    "https://tese-frontend.onrender.com",
+]
+
+
