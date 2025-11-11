@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load local .env if present (harmless on Render, but not required)
 load_dotenv()
@@ -94,18 +95,30 @@ TEMPLATES = [
 # DATABASES
 # ----------------------
 # Uses separate DB env vars. If you instead supply DATABASE_URL, you can switch to dj_database_url.parse(...)
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.environ.get("DB_NAME", "tese"),
+#         "USER": os.environ.get("DB_USER", "tese"),
+#         "PASSWORD": os.environ.get("DB_PASSWORD", "bvldcmefwomk"),
+#         "HOST": os.environ.get(
+#             "DB_HOST",
+#             "continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local",
+#         ),
+#         "PORT": os.environ.get("DB_PORT", "5432"),
+#     }
+# }
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set.")
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "tese"),
-        "USER": os.environ.get("DB_USER", "tese"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "bvldcmefwomk"),
-        "HOST": os.environ.get(
-            "DB_HOST",
-            "continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local",
-        ),
-        "PORT": os.environ.get("DB_PORT", "5432"),
-    }
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        # This is critical for connecting to Render from your local machine
+        ssl_require=True 
+    )
 }
 
 # ----------------------

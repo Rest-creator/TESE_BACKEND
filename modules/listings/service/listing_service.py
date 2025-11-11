@@ -4,12 +4,13 @@ from django.db import transaction
 from ..repository.listing_repository import ListingRepository
 from ..repository.image_repository import ImageRepository
 from ..entities.listing_entity import ListingEntity
-from modules.utils.bytescale_client import BytescaleClient
+# CHANGED: Import the new S3Client
+from modules.utils.s3_client import S3Client
 
 
 class ListingService:
 
-    FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1527847263472-aa5338d178b8?w=500&auto=format&fit=crop&q=60"
+    FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1527847263472-aa5338d178b8?w=500&auto:format&fit:crop&q=60"
 
     @staticmethod
     @transaction.atomic
@@ -31,7 +32,8 @@ class ListingService:
         listing = ListingRepository.create(listing_data)
 
         if images_files:
-            urls = ListingService._upload_to_bytescale(images_files)
+            # CHANGED: Call the new S3 upload method
+            urls = ListingService._upload_to_s3(images_files)
             ImageRepository.replace_images(listing, urls)
 
         return ListingEntity.from_model(listing)
@@ -50,7 +52,7 @@ class ListingService:
         listing = ListingRepository.update(listing, update_data)
 
         if images_files is not None:
-            urls = ListingService._upload_to_bytescale(images_files)
+            urls = ListingService._upload_to_s3(images_files)
             ImageRepository.replace_images(listing, urls)
 
         return ListingEntity.from_model(listing)
@@ -76,7 +78,8 @@ class ListingService:
         ListingRepository.delete(listing)
 
     @staticmethod
-    def _upload_to_bytescale(images_files) -> List[str]:
+    # CHANGED: Renamed method
+    def _upload_to_s3(images_files) -> List[str]:
         urls = []
         if not images_files:
             return [ListingService.FALLBACK_IMAGE_URL]
@@ -84,14 +87,16 @@ class ListingService:
             for f in images_files:
                 f.seek(0)
                 content = f.read()
-                url = BytescaleClient.upload_file(
-                    f.name,
-                    content,
-                    getattr(f, "content_type", "application/octet-stream")
+                # CHANGED: Use the S3Client
+                url = S3Client.upload_file(
+                    file_name=f.name,
+                    file_content=content,
+                    content_type=getattr(f, "content_type", "application/octet-stream")
                 )
                 urls.append(url)
         except Exception as e:
-            print(f"[Bytescale Upload Failed] {str(e)}")
+            # CHANGED: Updated error message
+            print(f"[S3 Upload Failed] {str(e)}")
             urls = [ListingService.FALLBACK_IMAGE_URL]
 
         return urls if urls else [ListingService.FALLBACK_IMAGE_URL]
