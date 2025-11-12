@@ -45,34 +45,37 @@ class ListingListCreateView(APIView):
             except Exception as e:
                 logger.exception("Failed to index new listing (non-fatal): %s", e)
 
-            return Response(entity, status=status.HTTP_201_CREATED)
+            # --- THIS IS THE FIX ---
+            # You must serialize the instance before returning it
+            data = ListingReadSerializer.from_entity(entity)
+            return Response(data, status=status.HTTP_201_CREATED)
+            # --- END OF FIX ---
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ListingDetailView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    # In ListingDetailView...
     def get(self, request, listing_id=None):
-        user_id = request.query_params.get("user_id")
-        all_flag = request.query_params.get("all", "false").lower() == "true"
+        try:
+            # You need a service method that gets ONE listing
+            entity = ListingService.get_listing_by_id(listing_id) 
+            
+            if not entity:
+                 return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize the single entity
+            data = ListingReadSerializer.from_entity(entity)
+            return Response(data, status=status.HTTP_200_OK)
 
-        if all_flag:
-            entities = ListingService.list_listings(user_id=None)
-        elif user_id:
-            entities = ListingService.list_listings(user_id=int(user_id))
-        else:
-            entities = ListingService.list_listings(user_id=None)
-
-        products = [ListingReadSerializer.from_entity(e) for e in entities if e.listing_type == "product"]
-        services = [ListingReadSerializer.from_entity(e) for e in entities if e.listing_type == "service"]
-        supplies = [ListingReadSerializer.from_entity(e) for e in entities if e.listing_type == "supplier_product"]
-
-        return Response({
-            "products": products,
-            "services": services,
-            "supplier_products": supplies
-        }, status=status.HTTP_200_OK)
-
+        except ValueError:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error("Error fetching listing detail: %s", e)
+            return Response({"detail": "An error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
     def put(self, request, listing_id):
         serializer = ListingWriteSerializer(data=request.data, context={"request": request})
         if not serializer.is_valid():

@@ -2,8 +2,8 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 from ..models import SearchIndexEntry
 from ..embeddings import generate_embedding
-from django.db import models           # for F, JSONField, functions.Cast
-from django.db.models import Q         # for Q(title__icontains=..., ...)
+from django.db import models          # for F, JSONField, functions.Cast
+from django.db.models import Q        # for Q(title__icontains=..., ...)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,10 @@ def index_object(obj, embed: bool = True):
             "title": doc.get("title", "")[:255],
             "description": doc.get("description", ""),
             "metadata": doc.get("metadata", {}),
-            "embedding": embedding or [0.0]*384,  # store as vector
+            # --- THIS IS THE OTHER FIX ---
+            # Change the fallback from 384 to 768
+            "embedding": embedding or [0.0]*768,  # store as vector
+            # --- END OF FIX ---
         },
     )
     logger.info("Indexed %s:%s", obj._meta.label, obj.pk)
@@ -53,6 +56,10 @@ def search_by_vector(query=None, filters=None, limit=10):
         return SearchIndexEntry.objects.none()
 
     query_vec = generate_embedding(query)
+    
+    # Handle case where embedding generation fails
+    if query_vec is None:
+        return SearchIndexEntry.objects.none()
 
     try:
         qs = SearchIndexEntry.objects.all()
@@ -73,5 +80,3 @@ def search_by_vector(query=None, filters=None, limit=10):
         return SearchIndexEntry.objects.filter(
             Q(title__icontains=query) | Q(description__icontains=query)
         )[:limit]
-
-

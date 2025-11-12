@@ -17,7 +17,7 @@ class SearchIndexEntry(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     metadata = models.JSONField(default=dict, blank=True)
-    embedding = VectorField(default=list)# semantic embedding
+    embedding = VectorField(dimensions=768, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -5,8 +5,6 @@ class StripeGateway:
     def __init__(self):
         stripe.api_key = settings.STRIPE_SECRET_KEY  # store in .env
         
-        print("Stripe API Key:", stripe.api_key)  # Debugging line to check if the key is loaded correctly
-
     def charge(self, amount: float, currency: str, source: str) -> dict:
         """
         Charge a card using Stripe.

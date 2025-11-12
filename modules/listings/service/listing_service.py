@@ -36,7 +36,7 @@ class ListingService:
             urls = ListingService._upload_to_s3(images_files)
             ImageRepository.replace_images(listing, urls)
 
-        return ListingEntity.from_model(listing)
+        return listing
 
     @staticmethod
     @transaction.atomic
@@ -55,7 +55,7 @@ class ListingService:
             urls = ListingService._upload_to_s3(images_files)
             ImageRepository.replace_images(listing, urls)
 
-        return ListingEntity.from_model(listing)
+        return listing
 
     @staticmethod
     def list_listings(user_id: Optional[int] = None, listing_type: Optional[str] = None) -> List[ListingEntity]:
@@ -83,8 +83,8 @@ class ListingService:
         urls = []
         if not images_files:
             return [ListingService.FALLBACK_IMAGE_URL]
-        try:
-            for f in images_files:
+        
+        for f in images_files:
                 f.seek(0)
                 content = f.read()
                 # CHANGED: Use the S3Client
@@ -94,9 +94,6 @@ class ListingService:
                     content_type=getattr(f, "content_type", "application/octet-stream")
                 )
                 urls.append(url)
-        except Exception as e:
-            # CHANGED: Updated error message
-            print(f"[S3 Upload Failed] {str(e)}")
-            urls = [ListingService.FALLBACK_IMAGE_URL]
+        
 
         return urls if urls else [ListingService.FALLBACK_IMAGE_URL]

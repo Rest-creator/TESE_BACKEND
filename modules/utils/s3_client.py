@@ -38,7 +38,6 @@ class S3Client:
                 Key=unique_filename,
                 Body=file_content,
                 ContentType=content_type,
-                ACL='public-read'  # This makes the *specific file* public
             )
 
             public_url = f"https://{AWS_S3_BUCKET_NAME}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{unique_filename}"

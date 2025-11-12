@@ -1,4 +1,3 @@
-# modules/listings/serializer/listing_serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from modules.listings.service.listing_service import ListingService
@@ -68,6 +67,23 @@ class ListingReadSerializer(serializers.Serializer):
         except User.DoesNotExist:
             # keep seller_name as default, but ensure seller_id is whatever entity had (may be None)
             seller_id = getattr(entity, "user_id", None)
+            
+        # --- THIS IS THE ROBUST FIX ---
+        # Get the attribute, which could be a Manager or a list
+        image_source = getattr(entity, "images", None)
+        images_list = []
+        
+        if image_source:
+            # Check if it's a manager (has .all method) or just a list
+            iterable_images = image_source.all() if hasattr(image_source, 'all') else image_source
+            
+            try:
+                # Now iterable_images is either the list of objects or the result of .all()
+                images_list = [{"id": i.id, "image_url": i.image_url} for i in iterable_images]
+            except TypeError:
+                # Failsafe in case iteration fails for some reason
+                images_list = []
+        # --- END OF FIX ---
 
         return {
             "id": entity.id,
@@ -86,7 +102,8 @@ class ListingReadSerializer(serializers.Serializer):
             "supplier": getattr(entity, "supplier", None),
             "inquiries": getattr(entity, "inquiries", 0),
             "views": getattr(entity, "views", 0),
-            "images": [{"id": i.id, "image_url": i.image_url} for i in getattr(entity, "images", [])],
+            # Use the correctly populated list
+            "images": images_list,
         }
 
 
@@ -120,7 +137,7 @@ class ListingWriteSerializer(serializers.Serializer):
             payload=validated_data,
             images_files=images
         )
-        return ListingReadSerializer.from_entity(entity)
+        return entity
 
     def update(self, instance, validated_data):
         images = validated_data.pop("images", None)  # None = don’t replace
@@ -130,4 +147,4 @@ class ListingWriteSerializer(serializers.Serializer):
             payload=validated_data,
             images_files=images
         )
-        return ListingReadSerializer.from_entity(entity)
+        return entity

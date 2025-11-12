@@ -40,9 +40,9 @@ urlpatterns = [
     path('signin/', SigninView.as_view(), name='signin'),
 
     # JWT token endpoints
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
     # Unified Listings endpoints
     path('listings/', ListingListCreateView.as_view(), name='listing-list-create'),

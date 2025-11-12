@@ -99,18 +99,19 @@ class Listing(models.Model):
 
 
 
-
 class ListingImage(models.Model):
     """
     Model for images associated with Service and SupplierProduct listings,
     storing Bytescale CDN URLs.
     """
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.UUIDField()
+    
+    object_id = models.PositiveBigIntegerField()
+    
     content_object = GenericForeignKey('content_type', 'object_id')
 
     # Change from ImageField to URLField to store Bytescale CDN URL
-    image_url = models.URLField(max_length=500, default="https://images.unsplash.com/photo-1676196312602-1a0c633553d9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHBsYWNlaG9sZGVyJTIwcHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D")
+    image_url = models.URLField(max_length=500, default="...")
     
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -120,7 +121,6 @@ class ListingImage(models.Model):
     class Meta:
         verbose_name = "Listing Image"
         verbose_name_plural = "Listing Images"
-
 
 # ***********************************************
 # Payment Models

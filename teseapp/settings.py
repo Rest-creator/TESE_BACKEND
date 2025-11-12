@@ -156,7 +156,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # CORS (allow your frontend domains)
 # ----------------------
 
-CORS_ALLOW_CREDENTIALS = False  # Not needed; JWT is stateless
+CORS_ALLOW_CREDENTIALS = True
 
 # ----------------------
 # REST FRAMEWORK (JWT only)
@@ -220,6 +220,7 @@ PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/
 
 CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
+    "http://localhost:8080",
 ]
 
 
