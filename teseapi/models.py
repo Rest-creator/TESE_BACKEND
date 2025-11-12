@@ -1,4 +1,3 @@
-# models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings # Import settings to reference AUTH_USER_MODEL
@@ -72,11 +71,29 @@ class Listing(models.Model):
         return f"{self.listing_type.capitalize()}: {self.name} by {self.user.username}"
     
     def to_search_document(self):
+        
+        # --- THIS IS THE FIX ---
+        # Get the first image URL safely
         first_image_url = ""
-        if hasattr(self, "image_urls") and self.image_urls:
-            first_image_url = self.image_urls[0]
-        elif hasattr(self, "images") and self.images.exists():
+        if hasattr(self, "images") and self.images.exists():
             first_image_url = self.images.first().image_url
+        
+        # Determine the best seller name to display
+        seller_name = "Unknown Seller"
+        seller_id = self.user_id
+        
+        if self.user:
+            try:
+                # Prefer full name, then business_name, then username
+                if self.user.first_name or self.user.last_name:
+                    seller_name = f"{self.user.first_name} {self.user.last_name}".strip()
+                elif getattr(self.user, "business_name", None):
+                    seller_name = self.user.business_name
+                elif self.user.username:
+                    seller_name = self.user.username
+            except Exception:
+                pass # Keep default "Unknown Seller"
+        # --- END OF FIX ---
 
         return {
             "id": self.id,
@@ -86,8 +103,8 @@ class Listing(models.Model):
                 "price": float(self.price),
                 "unit": self.unit,
                 "category": self.category or "",
-                "seller": self.user.username,
-                "sellerId": self.user_id,
+                "seller": seller_name, # <-- Use the fixed name
+                "sellerId": seller_id,
                 "location": self.location,
                 "status": self.status or "",
                 "created_at": self.created_at.isoformat(),
@@ -141,7 +158,10 @@ class CartItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2) # Store price as string to avoid float precision issues
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return f"{self.quantity} x {self.content_object.name}" 
+        # Check if content_object exists before accessing name
+        if self.listing:
+            return f"{self.quantity} x {self.listing.name}"
+        return f"{self.quantity} x [Deleted Listing]"
 
 
 class Order(models.Model):
@@ -155,6 +175,8 @@ class Order(models.Model):
     transaction_ref = models.CharField(max_length=255, null=True, blank=True)  # e.g., Stripe PaymentIntent ID
 
      # Add a string representation for easier debugging
+    def __str__(self):
+        return f"Order {self.id} by {self.user.username} - {self.status}"
 
 
 class Payment(models.Model):
@@ -165,18 +187,5 @@ class Payment(models.Model):
     transaction_ref = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
-
-# ******************************************************************************************************** 
-
-#  from django.apps import apps
-#    ...: from search.services.search_services import index_object
-#    ...: Listing = apps.get_model('teseapi', 'Listing')
-#    ...: count = 0
-#    ...: for l in Listing.objects.all():
-#    ...:     try:
-#    ...:         index_object(l)
-#    ...:         count += 1
-#    ...:     except Exception as e:
-#    ...:         print("Failed to index", l.id, e)
-#    ...: print("Indexed", count, "listings")
+    def __str__(self):
+        return f"Payment {self.id} for Order {self.order_id} - {self.status}"
