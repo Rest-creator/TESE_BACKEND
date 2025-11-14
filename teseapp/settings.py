@@ -41,9 +41,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Your apps
     "teseapi",
-    "modules.messaging",  # Messaging module
-    "pgvector",
+    "pgvector.django",
     "search",
+    'messaging.apps.MessagingConfig',
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",

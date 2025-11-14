@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 # Import GenericForeignKey and GenericRelation
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation 
 from django.contrib.contenttypes.models import ContentType
+from pgvector.django import VectorField
 
 
 
@@ -59,6 +60,7 @@ class Listing(models.Model):
     organic = models.BooleanField(default=False, blank=True, null=True)
     provider = models.CharField(max_length=255, blank=True, null=True)
     supplier = models.CharField(max_length=255, blank=True, null=True)
+    embedding = VectorField(null=True, blank=True)
     
     # Generic Relations for images and cart items
     images = GenericRelation('ListingImage')
@@ -71,46 +73,28 @@ class Listing(models.Model):
         return f"{self.listing_type.capitalize()}: {self.name} by {self.user.username}"
     
     def to_search_document(self):
-        
-        # --- THIS IS THE FIX ---
-        # Get the first image URL safely
-        first_image_url = ""
-        if hasattr(self, "images") and self.images.exists():
-            first_image_url = self.images.first().image_url
-        
-        # Determine the best seller name to display
-        seller_name = "Unknown Seller"
-        seller_id = self.user_id
-        
-        if self.user:
-            try:
-                # Prefer full name, then business_name, then username
-                if self.user.first_name or self.user.last_name:
-                    seller_name = f"{self.user.first_name} {self.user.last_name}".strip()
-                elif getattr(self.user, "business_name", None):
-                    seller_name = self.user.business_name
-                elif self.user.username:
-                    seller_name = self.user.username
-            except Exception:
-                pass # Keep default "Unknown Seller"
-        # --- END OF FIX ---
+        """
+        Combine title, description, and category for embeddings.
+        """
+        first_image = self.images.first().image_url if hasattr(self, "images") and self.images.exists() else ""
+        text_for_embedding = f"{self.name} {self.category or ''} {self.description or ''}"
 
         return {
             "id": self.id,
             "title": self.name,
+            "name": self.name,
+            "price": float(self.price),
+            "unit": self.unit,
+            "image": first_image,
+            "category": self.category or "",
+            "seller": self.user.username,
+            "sellerId": self.user_id,
+            "location": self.location,
             "description": self.description or "",
-            "metadata": {
-                "price": float(self.price),
-                "unit": self.unit,
-                "category": self.category or "",
-                "seller": seller_name, # <-- Use the fixed name
-                "sellerId": seller_id,
-                "location": self.location,
-                "status": self.status or "",
-                "created_at": self.created_at.isoformat(),
-                "updated_at": self.updated_at.isoformat(),
-                "image": first_image_url,
-            },
+            "status": self.status or "",
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "embedding_text": text_for_embedding,  # used for embedding generation
             "embedding": None,
         }
 

@@ -8,7 +8,7 @@ from django.conf import settings
 class SearchIndexEntry(models.Model):
     """
     Generic search index storage for any model.
-    Stores both textual metadata and optional embeddings.
+    Stores textual metadata and embeddings.
     """
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -30,7 +30,6 @@ class SearchIndexEntry(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.content_type})"
-
 
 class QueryLog(models.Model):
     """

@@ -20,6 +20,6 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/',include('teseapi.urls')),
-    path('api/messaging/', include('modules.messaging.urls')),  # Messaging module URLs
+    path('api/messaging/', include('messaging.urls')),  # Messaging module URLs
     path('api/search/', include('search.urls')),  # Messaging module URLs
 ]
