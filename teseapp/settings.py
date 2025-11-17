@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     "teseapi",
     "pgvector.django",
     "search",
+    "payment",
     'messaging.apps.MessagingConfig',
+    "products.apps.ProductsConfig",
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",
@@ -170,7 +172,7 @@ REST_FRAMEWORK = {
 # SIMPLE JWT SETTINGS
 # ----------------------
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,

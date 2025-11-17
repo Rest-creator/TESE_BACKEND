@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.conf import settings
-from teseapi.models import Listing
+from products.models import Listing
 
 class Conversation(models.Model):
     """
