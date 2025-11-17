@@ -88,11 +88,22 @@ class ListingService:
 
     @staticmethod
     def list_listings(user=None, listing_type=None):
+        """
+        Returns listings for the home page or filtered by user.
+
+        - user=None → public/home page, return all listings
+        - user=User → if `user_only=True`, return only this user's listings
+        - listing_type → filter by product/service/supplier_product
+        """
         qs = Listing.objects.all()
-        if user:
-            qs = qs.filter(user=user)
+
         if listing_type:
             qs = qs.filter(listing_type=listing_type)
+
+        # Optionally, filter by user only if explicitly requested
+        if user and getattr(user, "filter_by_user", False):
+            qs = qs.filter(user=user)
+
         return qs
 
     @staticmethod

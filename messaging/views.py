@@ -37,6 +37,7 @@ class ConversationListView(views.APIView):
         """
         This is the "find-or-create" endpoint.
         """
+        print(request.data)
         serializer = CreateConversationSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,12 +1,12 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from .models import Listing
 from .serializers.products_serializers import ListingSerializer
 from .services.product_services import ListingService
 import random
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
@@ -14,24 +14,21 @@ class ListingViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            # Public access
-            permission_classes = [AllowAny]
+            permission_classes = [AllowAny]  # public access
         else:
-            # Authenticated access for create, update, delete
-            permission_classes = [IsAuthenticated]
+            permission_classes = [IsAuthenticated]  # auth required
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        user = self.request.user
+        """
+        Public/home page listings
+        """
         listing_type = self.request.query_params.get("listing_type")
         limit = self.request.query_params.get("limit")
 
-        qs = ListingService.list_listings(
-            user=user if user.is_authenticated else None,
-            listing_type=listing_type
-        )
+        # Public listings → do not filter by user
+        qs = ListingService.list_listings(user=None, listing_type=listing_type)
 
-        # Optional: shuffle only if limit is set
         if limit:
             limit = int(limit)
             ids = list(qs.values_list("id", flat=True))
@@ -39,9 +36,7 @@ class ListingViewSet(viewsets.ModelViewSet):
             selected_ids = ids[:limit]
             return Listing.objects.filter(id__in=selected_ids)
 
-        # Return all matching listings
         return qs
-
 
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
@@ -62,9 +57,19 @@ class ListingViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         ListingService.delete_listing(instance)
 
-    @action(detail=False, methods=["get"], url_path="my-products", permission_classes=[IsAuthenticated])
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="my-products",
+        permission_classes=[IsAuthenticated]
+    )
     def my_products(self, request):
+        """
+        Return only the listings uploaded by the current user.
+        """
+        # Pass a flag so the service filters by this user
         user = request.user
-        listings = Listing.objects.filter(user=user)
+        setattr(user, "filter_by_user", True)
+        listings = ListingService.list_listings(user=user)
         serializer = self.get_serializer(listings, many=True)
         return Response(serializer.data)
