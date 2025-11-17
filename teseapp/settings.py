@@ -223,6 +223,7 @@ PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/
 CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
     "http://localhost:8080",
+    "http://localhost:3000",
 ]
 
 
