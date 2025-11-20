@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
 # APPLICATION DEFINITION
 # ----------------------
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -94,23 +95,7 @@ TEMPLATES = [
     },
 ]
 
-# ----------------------
-# DATABASES
-# ----------------------
-# Uses separate DB env vars. If you instead supply DATABASE_URL, you can switch to dj_database_url.parse(...)
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.environ.get("DB_NAME", "tese"),
-#         "USER": os.environ.get("DB_USER", "tese"),
-#         "PASSWORD": os.environ.get("DB_PASSWORD", "bvldcmefwomk"),
-#         "HOST": os.environ.get(
-#             "DB_HOST",
-#             "continental-gold-chinchilla-lpqnj-postgresql.continental-gold-chinchilla-lpqnj.svc.cluster.local",
-#         ),
-#         "PORT": os.environ.get("DB_PORT", "5432"),
-#     }
-# }
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if not DATABASE_URL:
@@ -215,15 +200,19 @@ PAYNOW_INTEGRATION_ID = os.environ.get("PAYNOW_INTEGRATION_ID")
 PAYNOW_RETURN_URL = os.environ.get("PAYNOW_RETURN_URL", "https://yourdomain.com/paynow/return/")
 PAYNOW_RESULT_URL = os.environ.get("PAYNOW_RESULT_URL", "https://yourdomain.com/paynow/result/")
 
-# ----------------------
-# Any additional settings below...
-# ----------------------
-# settings.py
 
 CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
     "http://localhost:8080",
     "http://localhost:3000",
 ]
+ASGI_APPLICATION = "teseapp.asgi.application"
 
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
+        },
+    },
+}

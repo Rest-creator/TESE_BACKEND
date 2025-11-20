@@ -1,16 +1,17 @@
-"""
-ASGI config for teseapp project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
-"""
-
+# teseapp/asgi.py
 import os
-
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+import messaging.routing # We will create this next
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'teseapp.settings')
 
-application = get_asgi_application()
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            messaging.routing.websocket_urlpatterns
+        )
+    ),
+})
