@@ -26,7 +26,8 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "tesebackend-4ic7p.sevalla.app",
-    "tese-backend-wq0d.onrender.com"
+    "tese-backend-wq0d.onrender.com",
+    "tese-backend-vhl0.onrender.com",
 ]
 
 # ----------------------
@@ -216,3 +217,26 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# settings.py
+
+# Check if we are in production or dev
+if not DEBUG:
+    # PRODUCTION SETTINGS
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'# Or smtp.gmail.com (not recommended for heavy use)
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') # 'apikey' for SendGrid
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') # The actual long API key
+else:
+    # DEV SETTINGS
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# settings.py
+
+if not DEBUG:
+    FRONTEND_URL = 'https://restksolutions.co.zw'
+else: 
+    FRONTEND_URL = 'http://localhost:8080'
+# 

@@ -2,7 +2,8 @@
 from django.db.models import Q
 from ..models import Conversation, Message, models
 from django.conf import settings
-from teseapi.models import Listing # Adjust this import
+
+from products.models import Listing
 
 User = settings.AUTH_USER_MODEL
 

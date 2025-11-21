@@ -37,6 +37,8 @@ class ListingViewSet(viewsets.ModelViewSet):
             return Listing.objects.filter(id__in=selected_ids)
 
         return qs
+    
+    
 
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:

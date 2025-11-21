@@ -1,15 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.conf import settings # Import settings to reference AUTH_USER_MODEL
-from django.core.validators import MinValueValidator
-import uuid
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-# Import GenericForeignKey and GenericRelation
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation 
-from django.contrib.contenttypes.models import ContentType
-from pgvector.django import VectorField
-from products.models import Listing
 
 
 class User(AbstractUser):
