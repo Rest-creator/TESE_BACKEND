@@ -27,7 +27,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "tesebackend-4ic7p.sevalla.app",
     "tese-backend-wq0d.onrender.com",
-    "tese-backend-vhl0.onrender.com",
+    "tese-backend-vhl3.onrender.com",
 ]
 
 # ----------------------
@@ -56,6 +56,11 @@ INSTALLED_APPS = [
     "channels",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://tese-frontend.onrender.com",
+    "https://www.restksolutions.co.zw",
+    "https://restksolutions.co.zw",
+]
 # ----------------------
 # MIDDLEWARE
 # ----------------------
@@ -206,6 +211,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
     "http://localhost:8080",
     "http://localhost:3000",
+    "https://www.restksolutions.co.zw",
+    "https://restksolutions.co.zw",
 ]
 ASGI_APPLICATION = "teseapp.asgi.application"
 
