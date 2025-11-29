@@ -207,7 +207,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
     "http://localhost:8080",
     "http://localhost:3000",
-    'https://restksolutions.co.zw',
+    'https://www.restksolutions.co.zw',
      "https://tese-backend-vhl0.onrender.com",
 ]
 ASGI_APPLICATION = "teseapp.asgi.application"
