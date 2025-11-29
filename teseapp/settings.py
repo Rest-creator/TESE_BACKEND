@@ -196,6 +196,7 @@ BYTESCALE_ACCOUNT_ID = os.environ.get("BYTESCALE_ACCOUNT_ID", "223k2Hc")
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 PAYNOW_SECRET_KEY = os.environ.get("PAYNOW_SECRET_KEY")
 PAYNOW_INTEGRATION_ID = os.environ.get("PAYNOW_INTEGRATION_ID")
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Optional URLs Paynow will redirect to after payment
 PAYNOW_RETURN_URL = os.environ.get("PAYNOW_RETURN_URL", "https://yourdomain.com/paynow/return/")
@@ -206,6 +207,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://tese-frontend.onrender.com",
     "http://localhost:8080",
     "http://localhost:3000",
+    'https://restksolutions.co.zw',
+     "https://tese-backend-vhl0.onrender.com",
 ]
 ASGI_APPLICATION = "teseapp.asgi.application"
 

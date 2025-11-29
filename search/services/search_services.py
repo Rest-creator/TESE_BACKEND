@@ -1,82 +1,96 @@
+# services/search_services.py
 import logging
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from pgvector.django import CosineDistance
+import google.generativeai as genai  # CHANGED: Import Google
 from ..models import SearchIndexEntry
-from ..embeddings import generate_embedding
-from django.db import models          # for F, JSONField, functions.Cast
-from django.db.models import Q        # for Q(title__icontains=..., ...)
 
 logger = logging.getLogger(__name__)
 
-def index_object(obj, embed: bool = True):
-    if not hasattr(obj, "to_search_document"):
-        raise RuntimeError(f"{obj._meta.label} missing to_search_document method")
+# Initialize Gemini (ensure GEMINI_API_KEY is in your settings.py)
+# Get key here: https://aistudio.google.com/app/apikey
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
-    doc = obj.to_search_document()
-    embedding = doc.get("embedding") or (generate_embedding(doc["description"]) if embed else None)
+def get_embedding(text, task_type="retrieval_document"):
+    """
+    Generates a vector embedding for a given text using Gemini.
+    
+    task_type options:
+    - "retrieval_document": Used when indexing the database (storing items).
+    - "retrieval_query": Used when the user is searching.
+    """
+    try:
+        text = text.replace("\n", " ")  # Sanitize
+        
+        # CHANGED: Gemini API Call
+        result = genai.embed_content(
+            model="models/text-embedding-004", # 768 dimensions
+            content=text,
+            task_type=task_type,
+            title="Embedding" if task_type == "retrieval_document" else None
+        )
+        return result['embedding']
+    except Exception as e:
+        logger.error(f"Error generating Gemini embedding: {e}")
+        return None
 
-    content_type = ContentType.objects.get_for_model(obj.__class__)
-    entry, created = SearchIndexEntry.objects.update_or_create(
+def index_object(instance):
+    """
+    Takes a model instance (like Listing), generates an embedding, 
+    and saves/updates it in SearchIndexEntry.
+    """
+    if not hasattr(instance, 'to_search_document'):
+        logger.warning(f"Object {instance} does not implement to_search_document()")
+        return
+
+    doc_data = instance.to_search_document()
+    
+    # 'embedding_text' comes from your Listing.to_search_document method
+    text_content = doc_data.get('embedding_text', '')
+    
+    # CHANGED: explicit task_type for better accuracy
+    vector = get_embedding(text_content, task_type="retrieval_document")
+
+    if not vector:
+        return
+
+    content_type = ContentType.objects.get_for_model(instance)
+    
+    SearchIndexEntry.objects.update_or_create(
         content_type=content_type,
-        object_id=obj.pk,
+        object_id=instance.id,
         defaults={
-            "title": doc.get("title", "")[:255],
-            "description": doc.get("description", ""),
-            "metadata": doc.get("metadata", {}),
-            # --- THIS IS THE OTHER FIX ---
-            # Change the fallback from 384 to 768
-            "embedding": embedding or [0.0]*768,  # store as vector
-            # --- END OF FIX ---
-        },
+            'title': doc_data.get('title', str(instance)),
+            'description': doc_data.get('description', ''),
+            'metadata': doc_data,
+            'embedding': vector 
+        }
     )
-    logger.info("Indexed %s:%s", obj._meta.label, obj.pk)
-    return entry
+    logger.info(f"Successfully indexed {instance}")
 
+def delete_object_from_index(instance):
+    content_type = ContentType.objects.get_for_model(instance)
+    SearchIndexEntry.objects.filter(
+        content_type=content_type, 
+        object_id=instance.id
+    ).delete()
 
-def delete_object_from_index(obj):
-    content_type = ContentType.objects.get_for_model(obj.__class__)
-    SearchIndexEntry.objects.filter(content_type=content_type, object_id=obj.pk).delete()
-    logger.info("Deleted from index %s:%s", obj._meta.label, obj.pk)
-
-def search_by_text(query: str, limit: int = 10):
-    """
-    Perform simple keyword search across indexed entries.
-    For semantic search, replace with vector similarity search.
-    """
-    from django.db.models import Q
-    return SearchIndexEntry.objects.filter(
-        Q(title__icontains=query) | Q(description__icontains=query)
-    )[:limit]
-
-from django.db.models import F
-from pgvector.psycopg2 import vector  # optional helper
-
-def search_by_vector(query=None, filters=None, limit=10):
-    filters = filters or {}
+def search_by_vector(query, filters=None):
     if not query:
         return SearchIndexEntry.objects.none()
 
-    query_vec = generate_embedding(query)
+    # CHANGED: explicit task_type for the search query
+    query_vector = get_embedding(query, task_type="retrieval_query")
     
-    # Handle case where embedding generation fails
-    if query_vec is None:
+    if not query_vector:
         return SearchIndexEntry.objects.none()
 
-    try:
-        qs = SearchIndexEntry.objects.all()
-        for fk, fv in filters.items():
-            if fk.startswith("metadata__"):
-                meta_key = fk.replace("metadata__", "")
-                qs = qs.filter(**{f"metadata__{meta_key}": fv})
+    qs = SearchIndexEntry.objects.annotate(
+        distance=CosineDistance('embedding', query_vector)
+    ).order_by('distance')
 
-        # pgvector semantic search
-        qs = qs.annotate(
-            similarity=models.functions.CosineDistance("embedding", query_vec)
-        ).order_by("similarity")[:limit]
+    if filters:
+        qs = qs.filter(**filters)
 
-        return qs
-
-    except Exception:
-        # fallback for SQLite
-        return SearchIndexEntry.objects.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )[:limit]
+    return qs
