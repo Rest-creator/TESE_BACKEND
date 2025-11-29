@@ -28,6 +28,7 @@ ALLOWED_HOSTS = [
     "tesebackend-4ic7p.sevalla.app",
     "tese-backend-wq0d.onrender.com",
     "tese-backend-vhl0.onrender.com",
+    "tese-backend-vhl3.onrender.com",
 ]
 
 # ----------------------
