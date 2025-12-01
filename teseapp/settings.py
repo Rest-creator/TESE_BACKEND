@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "pgvector.django",
     "search",
     "payment",
+    'api_logger',
     'messaging.apps.MessagingConfig',
     "products.apps.ProductsConfig",
     # Third-party
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'api_logger.middleware.APILoggingMiddleware',
 ]
 
 
@@ -244,3 +246,8 @@ if not DEBUG:
 else: 
     FRONTEND_URL = 'http://localhost:8080'
 # 
+
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800 
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800

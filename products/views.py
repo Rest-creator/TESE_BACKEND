@@ -6,7 +6,7 @@ from .models import Listing
 from .serializers.products_serializers import ListingSerializer
 from .services.product_services import ListingService
 import random
-
+from django.db.models import Q
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
@@ -21,38 +21,66 @@ class ListingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Public/home page listings
+        Logic:
+        1. If 'search' param exists -> Search name/description/category
+        2. If 'listing_type' param exists -> Filter by type
+        3. If NO search -> Return 10 random items (Discovery Mode)
         """
-        listing_type = self.request.query_params.get("listing_type")
-        limit = self.request.query_params.get("limit")
+        qs = ListingService.list_listings(user=None) # Get base queryset
 
-        # Public listings → do not filter by user
-        qs = ListingService.list_listings(user=None, listing_type=listing_type)
+        # 1. Capture parameters
+        search_query = self.request.query_params.get("search", None)
+        listing_type = self.request.query_params.get("listing_type", None)
+        limit = self.request.query_params.get("limit", None)
 
-        if limit:
-            limit = int(limit)
+        # 2. Filter by Type (e.g., ?type=product)
+        if listing_type:
+            qs = qs.filter(listing_type=listing_type)
+
+        # 3. Search Logic
+        if search_query:
+            # Simple case-insensitive search on Name, Description, or Category
+            qs = qs.filter(
+                Q(name__icontains=search_query) | 
+                Q(description__icontains=search_query) |
+                Q(category__icontains=search_query)
+            )
+        
+        # 4. Randomize ONLY if it's an initial load (no search)
+        else:
+            # Default to 10 items if limit is not provided
+            limit_count = int(limit) if limit else 10
+            
+            # Efficient random selection for smaller datasets
             ids = list(qs.values_list("id", flat=True))
-            random.shuffle(ids)
-            selected_ids = ids[:limit]
-            return Listing.objects.filter(id__in=selected_ids)
+            if ids:
+                random.shuffle(ids)
+                selected_ids = ids[:limit_count]
+                qs = qs.filter(id__in=selected_ids)
 
         return qs
     
-    
-
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
             raise PermissionError("Authentication required to create a listing")
         payload = self.request.data
+        
+        # ✅ CAPTURE MULTIPLE IMAGES
         images = self.request.FILES.getlist("images")
+        
         listing = ListingService.create_listing(self.request.user, payload, images)
         serializer.instance = listing
 
     def perform_update(self, serializer):
         listing = self.get_object()
         payload = self.request.data
+        
+        # ✅ CAPTURE MULTIPLE IMAGES
         images = self.request.FILES.getlist("images")
+        
+        # ✅ CAPTURE LIST OF IMAGES TO KEEP
         keep_images = self.request.data.getlist("existing_images_to_keep")
+        
         updated = ListingService.update_listing(listing, payload, images, keep_images)
         serializer.instance = updated
 

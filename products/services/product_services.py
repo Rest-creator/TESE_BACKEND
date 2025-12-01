@@ -1,10 +1,31 @@
 from typing import List, Optional
 from django.db import transaction
+from decimal import Decimal, InvalidOperation
+import re
 from ..models import Listing, ListingImage
 from modules.utils.s3_client import S3Client
 
 class ListingService:
     FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1527847263472-aa5338d178b8?w=500&auto=format&fit=crop&q=60"
+
+    @staticmethod
+    def _sanitize_decimal(value):
+        """
+        Converts strings like '50 tonnes', 'approx 50', or '$10.00' to a clean Decimal.
+        Returns None if conversion fails.
+        """
+        if value is None or value == "":
+            return None
+        
+        value_str = str(value).strip()
+        match = re.search(r'-?\d+(\.\d+)?', value_str)
+        
+        if match:
+            try:
+                return Decimal(match.group())
+            except InvalidOperation:
+                return None
+        return None
 
     @staticmethod
     def get_listing_by_id(listing_id: int):
@@ -22,17 +43,21 @@ class ListingService:
 
         status = payload.get("status")
         if status not in ["active", "inactive"]:
-            status = "active"  # default
+            status = "active"
 
         listing_type = payload.get("listing_type")
         if listing_type not in ["product", "service", "supplier_product"]:
-            listing_type = "product"  # default if invalid or missing
+            listing_type = "product"
+
+        # Sanitize numeric fields
+        price_clean = ListingService._sanitize_decimal(payload.get("price"))
+        quantity_clean = ListingService._sanitize_decimal(payload.get("quantity"))
 
         listing = Listing.objects.create(
             user=user,
             name=payload.get("name"),
-            price=payload.get("price"),
-            quantity=payload.get("quantity"),
+            price=price_clean,
+            quantity=quantity_clean,
             unit=payload.get("unit"),
             category=payload.get("category"),
             description=payload.get("description"),
@@ -40,11 +65,9 @@ class ListingService:
             organic=organic,
             status=status,
             supplier=payload.get("supplier"),
-            listing_type=listing_type,  # ✅ add this
+            listing_type=listing_type,
             provider=payload.get("provider"),
         )
-
-
 
         if images_files:
             urls = ListingService._upload_to_s3(images_files)
@@ -57,7 +80,11 @@ class ListingService:
     @transaction.atomic
     def update_listing(listing, payload: dict, images_files=None, existing_images_to_keep=None):
         for key, value in payload.items():
+            if key in ['price', 'quantity']:
+                value = ListingService._sanitize_decimal(value)
+            
             setattr(listing, key, value)
+        
         listing.save()
 
         existing_images_to_keep = existing_images_to_keep or []
@@ -66,7 +93,6 @@ class ListingService:
             listing_type = payload['listing_type']
             if listing_type in ["product", "service", "supplier_product"]:
                 listing.listing_type = listing_type
-
 
         # Remove deleted images
         for img in listing.images.all():
@@ -88,19 +114,11 @@ class ListingService:
 
     @staticmethod
     def list_listings(user=None, listing_type=None):
-        """
-        Returns listings for the home page or filtered by user.
-
-        - user=None → public/home page, return all listings
-        - user=User → if `user_only=True`, return only this user's listings
-        - listing_type → filter by product/service/supplier_product
-        """
         qs = Listing.objects.all()
 
         if listing_type:
             qs = qs.filter(listing_type=listing_type)
 
-        # Optionally, filter by user only if explicitly requested
         if user and getattr(user, "filter_by_user", False):
             qs = qs.filter(user=user)
 
@@ -110,7 +128,7 @@ class ListingService:
     def _upload_to_s3(images_files) -> List[str]:
         urls = []
         if not images_files:
-            return [ListingService.FALLBACK_IMAGE_URL]
+            return []  # Return empty list instead of fallback here if not required
 
         for f in images_files:
             f.seek(0)
@@ -121,4 +139,4 @@ class ListingService:
                 content_type=getattr(f, "content_type", "application/octet-stream")
             )
             urls.append(url)
-        return urls if urls else [ListingService.FALLBACK_IMAGE_URL]
+        return urls

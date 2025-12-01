@@ -3,27 +3,31 @@ import logging
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from pgvector.django import CosineDistance
-import google.generativeai as genai  # CHANGED: Import Google
+import google.generativeai as genai
 from ..models import SearchIndexEntry
 
 logger = logging.getLogger(__name__)
 
-# Initialize Gemini (ensure GEMINI_API_KEY is in your settings.py)
-# Get key here: https://aistudio.google.com/app/apikey
+# Initialize Gemini
 genai.configure(api_key=settings.GEMINI_API_KEY)
+
+# --- CONFIGURATION ---
+# The cutoff score for semantic search.
+# 0.0 = Identical
+# 0.4 = Very relevant
+# 0.55 = Roughly related
+# 1.0 = Unrelated
+# If results are too broad, LOWER this number (e.g., to 0.45).
+# If you get no results often, RAISE this number (e.g., to 0.65).
+SIMILARITY_THRESHOLD = 0.55
 
 def get_embedding(text, task_type="retrieval_document"):
     """
     Generates a vector embedding for a given text using Gemini.
-    
-    task_type options:
-    - "retrieval_document": Used when indexing the database (storing items).
-    - "retrieval_query": Used when the user is searching.
     """
     try:
         text = text.replace("\n", " ")  # Sanitize
         
-        # CHANGED: Gemini API Call
         result = genai.embed_content(
             model="models/text-embedding-004", # 768 dimensions
             content=text,
@@ -37,19 +41,15 @@ def get_embedding(text, task_type="retrieval_document"):
 
 def index_object(instance):
     """
-    Takes a model instance (like Listing), generates an embedding, 
-    and saves/updates it in SearchIndexEntry.
+    Takes a model instance, generates an embedding, and saves/updates it.
     """
     if not hasattr(instance, 'to_search_document'):
         logger.warning(f"Object {instance} does not implement to_search_document()")
         return
 
     doc_data = instance.to_search_document()
-    
-    # 'embedding_text' comes from your Listing.to_search_document method
     text_content = doc_data.get('embedding_text', '')
     
-    # CHANGED: explicit task_type for better accuracy
     vector = get_embedding(text_content, task_type="retrieval_document")
 
     if not vector:
@@ -80,17 +80,29 @@ def search_by_vector(query, filters=None):
     if not query:
         return SearchIndexEntry.objects.none()
 
-    # CHANGED: explicit task_type for the search query
+    # 1. Generate Query Embedding
     query_vector = get_embedding(query, task_type="retrieval_query")
     
     if not query_vector:
         return SearchIndexEntry.objects.none()
 
-    qs = SearchIndexEntry.objects.annotate(
+    # 2. Build Query with Distance Calculation
+    # We use 'alias' to calculate distance for filtering/ordering without 
+    # necessarily attaching it to the final object output (unless you explicitly select it).
+    qs = SearchIndexEntry.objects.alias(
         distance=CosineDistance('embedding', query_vector)
-    ).order_by('distance')
+    )
 
+    # 3. ✅ APPLY THRESHOLD (The "Cutoff")
+    # This ensures we don't return random, unrelated items.
+    qs = qs.filter(distance__lt=SIMILARITY_THRESHOLD)
+
+    # 4. Apply Metadata Filters (if any)
     if filters:
+        # e.g., filters={'metadata__category': 'Vegetables'}
         qs = qs.filter(**filters)
+
+    # 5. Order by most similar
+    qs = qs.order_by('distance')
 
     return qs

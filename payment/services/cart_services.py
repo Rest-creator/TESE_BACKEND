@@ -42,6 +42,25 @@ class CartService:
     @staticmethod
     def list_cart_items(user):
         return CartItem.objects.filter(user=user).select_related("listing")
+    
+    @staticmethod
+    def update_cart_item(user, item_id, quantity):
+        """
+        Updates the quantity of a specific cart item.
+        If quantity <= 0, deletes the item.
+        """
+        try:
+            item = CartItem.objects.get(id=item_id, user=user)
+            
+            if quantity <= 0:
+                item.delete()
+                return None
+            
+            item.quantity = quantity
+            item.save()
+            return item
+        except CartItem.DoesNotExist:
+            raise Exception("Cart item not found")
 
 
     @staticmethod

@@ -1,27 +1,30 @@
-from rest_framework import generics, permissions
+from rest_framework import  permissions, status, views
 from .serializers.search_serializer import SearchResultSerializer
-from .repositories.search_repository import search_index
-from .models import *
-from rest_framework import viewsets, permissions, status
+from .models import SearchIndexEntry
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.apps import apps
 from .permissions import IsAdminOrInternalService
-from .services.search_services import index_object, delete_object_from_index, search_by_vector
+from .services.search_services import index_object, search_by_vector
 
-from django.db import connection
-from django.db.models import Q
-import logging, traceback
+import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
-class SearchView(generics.ListAPIView):
-    serializer_class = SearchResultSerializer
+class SearchView(views.APIView):
+    """
+    Performs semantic search.
+    If matches are found -> Returns them with found=True.
+    If NO matches are found -> Returns random available products with found=False.
+    """
     permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
-        query = self.request.query_params.get('q', None)
-        # collect metadata-like filters (keep previous behavior)
+    def get(self, request, *args, **kwargs):
+        query = self.request.query_params.get('q', '').strip()
+        
+        # 1. Collect Filters
         filters = {}
         for key, value in self.request.query_params.items():
             if key.startswith('metadata__'):
@@ -29,58 +32,53 @@ class SearchView(generics.ListAPIView):
             if key == 'type':
                 filters['content_type__model'] = value
 
-        # If no query and no filters, keep previous behavior (empty set)
-        if not query and not filters:
-            return SearchIndexEntry.objects.none()
+        # 2. Initialize Result Variables
+        qs = None
+        found = False
+        message = ""
 
-        # First attempt: delegate to repository (may use pgvector/postgres-specific SQL)
-        try:
-            # Only attempt repo search if repo exists
-            qs = search_by_vector(query=query, filters=filters)
-            # Ensure repo returned a queryset-like object; if not, try to convert
-            if qs is None:
-                raise RuntimeError("search_index returned None")
-            return qs
-        except Exception as e:
-            # Log helpful debug info (DB vendor, query, filters, traceback)
-            logger.error(
-                "search_index() failed. DB vendor=%s q=%r filters=%s error=%s",
-                connection.vendor,
-                query,
-                filters,
-                str(e),
-            )
-            logger.debug(traceback.format_exc())
-
-            # Fallback: perform portable icontains search on SearchIndexEntry
-            # This avoids any Postgres-only SQL and keeps the endpoint working on sqlite/local dev.
+        # 3. Attempt Vector Search
+        if query:
             try:
-                q_obj = Q()
-                if query:
-                    q_obj = Q(title__icontains=query) | Q(description__icontains=query)
+                # search_by_vector should handle the "threshold" logic internally
+                # and return an empty queryset if distances are too high.
+                qs = search_by_vector(query=query, filters=filters)
+            except Exception as e:
+                logger.error(f"Vector search failed: {e}")
+                logger.debug(traceback.format_exc())
+                qs = None
 
-                # Apply content_type filter if provided
-                if 'content_type__model' in filters:
-                    model_name = filters.pop('content_type__model')
-                    q_obj &= Q(content_type__model__iexact=model_name)
+        # 4. Check Results & Handle Fallback
+        # If we have a query, and vector search returned results:
+        if qs is not None and qs.exists():
+            found = True
+            message = "Matches found"
+        else:
+            # --- FALLBACK SCENARIO ---
+            found = False
+            if query:
+                message = f"No exact matches for '{query}'. Here are some available products."
+            else:
+                message = "Discover our products."
 
-                base_qs = SearchIndexEntry.objects.filter(q_obj).order_by('-created_at')
+            # Fetch random available items from the index to keep the user engaged
+            # Note: .order_by('?') is expensive on massive DBs, but fine for MVP/startups
+            qs = SearchIndexEntry.objects.all().order_by('?')[:12]
 
-                # Apply any simple metadata filters if they map directly to JSON lookups
-                # NOTE: SQLite won't support jsonfield lookups robustly — keep to simple equality
-                for fk, fv in list(filters.items()):
-                    # only handle "metadata__key" style simple equality (metadata__price__lte not handled here)
-                    if fk.startswith('metadata__') and '__' not in fk[len('metadata__'):]:
-                        meta_key = fk.replace('metadata__', '')
-                        base_qs = base_qs.filter(**{f"metadata__{meta_key}": fv})
-                        
-                print(base_qs)
+            # Apply type filter to fallback if it exists (so we don't show services when looking for products)
+            if 'content_type__model' in filters:
+                qs = qs.filter(content_type__model__iexact=filters['content_type__model'])
 
-                return base_qs
-            except Exception as fallback_exc:
-                logger.exception("Fallback search also failed: %s", fallback_exc)
-                # final safe fallback: empty queryset so view returns empty results (instead of 500)
-                return SearchIndexEntry.objects.none()
+        # 5. Serialize
+        serializer = SearchResultSerializer(qs, many=True)
+
+        # 6. Return Custom Response Structure
+        return Response({
+            "results": serializer.data,
+            "found": found,
+            "message": message
+        }, status=status.HTTP_200_OK)
+
 
 class IndexAdminViewSet(viewsets.ViewSet):
     """
@@ -88,7 +86,6 @@ class IndexAdminViewSet(viewsets.ViewSet):
     Implements: POST /search/index/, DELETE /search/index/{id},
                 POST /search/bulk/, POST /search/rebuild/
     """
-    # Apply our custom permission class to all actions in this ViewSet
     permission_classes = [IsAdminOrInternalService]
 
     def create(self, request):
@@ -144,14 +141,9 @@ class IndexAdminViewSet(viewsets.ViewSet):
         content_type = ContentType.objects.get_for_model(Model)
         SearchIndexEntry.objects.filter(content_type=content_type).delete()
         
-        # TODO: This should be a background task!
-        # Running this in a request will time out.
         count = 0
         for instance in Model.objects.all():
             index_object(instance)
             count += 1
             
         return Response({"status": "rebuild complete", "model": model_name, "indexed_items": count})
-
-    # You would also add a 'bulk' action here (POST /search/bulk/)
-    # that takes a list of object IDs to index.
