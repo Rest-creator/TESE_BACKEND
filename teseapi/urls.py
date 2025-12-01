@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-# --- Auth Views ---
+from teseapi.views_app.profile_views import UserProfileView 
 from .views_app.auth_views import SignupView, SigninView
 from .views_app.reset_password import RequestPasswordResetView, ResetPasswordConfirmView
 
@@ -22,6 +22,8 @@ urlpatterns = [
     # Auth endpoints
     path('signup/', SignupView.as_view(), name='signup'),
     path('signin/', SigninView.as_view(), name='signin'),
+    
+    path('auth/profile/', UserProfileView.as_view(), name='user-profile'),
 
     # JWT token endpoints
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
