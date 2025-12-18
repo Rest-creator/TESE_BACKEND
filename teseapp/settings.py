@@ -29,6 +29,7 @@ ALLOWED_HOSTS = [
     "tese-backend-wq0d.onrender.com",
     "tese-backend-vhl0.onrender.com",
     "tese-backend-vhl3.onrender.com",
+    "159.198.42.231",
 ]
 
 # ----------------------
@@ -211,6 +212,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     'https://www.restksolutions.co.zw',
      "https://tese-backend-vhl0.onrender.com",
+    "http://159.198.42.231:3000",
 ]
 ASGI_APPLICATION = "teseapp.asgi.application"
 
