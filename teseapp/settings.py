@@ -100,18 +100,17 @@ TEMPLATES = [
 ]
 
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set.")
-
 DATABASES = {
-    'default': dj_database_url.parse(
-        DATABASE_URL,
-        # This is critical for connecting to Render from your local machine
-        ssl_require=True 
-    )
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "tese_db",              # Your Postgres database name
+        "USER": "tese_user",          # Your Postgres user (change if different)
+        "PASSWORD": "tese@1234", # Replace with your actual password
+        "HOST": "localhost",         # Or the server IP
+        "PORT": "5432",              # Default Postgres port
+    }
 }
+
 
 # ----------------------
 # AUTH USER
